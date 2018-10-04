@@ -25,7 +25,7 @@
 import Foundation
 
 open class RowOf<T>: BaseRow where T: Equatable{
-
+    
     private var _value: T? {
         didSet {
             guard _value != oldValue else { return }
@@ -48,7 +48,7 @@ open class RowOf<T>: BaseRow where T: Equatable{
             }
         }
     }
-
+    
     /// The typed value of this row.
     open var value: T? {
         set (newValue) {
@@ -63,26 +63,26 @@ open class RowOf<T>: BaseRow where T: Equatable{
             return _value
         }
     }
-
+    
     /// The untyped value of this row.
     public override var baseValue: Any? {
         get { return value }
         set { value = newValue as? T }
     }
-
+    
     /// Block variable used to get the String that should be displayed for the value of this row.
     public var displayValueFor: ((T?) -> String?)? = {
         return $0.map { String(describing: $0) }
     }
-
+    
     public required init(tag: String?) {
         super.init(tag: tag)
     }
-
-    internal var rules: [ValidationRuleHelper<T>] = []
-
+    
+    open var rules: [ValidationRuleHelper<T>] = []
+    
     @discardableResult
-    public override func validate() -> [ValidationError] {
+    open override func validate() -> [ValidationError] {
         #if swift(>=4.1)
         validationErrors = rules.compactMap { $0.validateFn(value) }
         #else
@@ -90,7 +90,7 @@ open class RowOf<T>: BaseRow where T: Equatable{
         #endif
         return validationErrors
     }
-
+    
     /// Add a Validation rule for the Row
     /// - Parameter rule: RuleType object to add
     public func add<Rule: RuleType>(rule: Rule) where T == Rule.RowValueType {
@@ -99,13 +99,13 @@ open class RowOf<T>: BaseRow where T: Equatable{
         }
         rules.append(ValidationRuleHelper(validateFn: validFn, rule: rule))
     }
-
+    
     /// Add a Validation rule set for the Row
     /// - Parameter ruleSet: RuleSet<T> set of rules to add
     public func add(ruleSet: RuleSet<T>) {
         rules.append(contentsOf: ruleSet.rules)
     }
-
+    
     public func remove(ruleWithIdentifier identifier: String) {
         if let index = rules.index(where: { (validationRuleHelper) -> Bool in
             return validationRuleHelper.rule.id == identifier
@@ -113,30 +113,30 @@ open class RowOf<T>: BaseRow where T: Equatable{
             rules.remove(at: index)
         }
     }
-
+    
     public func removeAllRules() {
         validationErrors.removeAll()
         rules.removeAll()
     }
-
+    
 }
 
 /// Generic class that represents an Eureka row.
 open class Row<Cell: CellType>: RowOf<Cell.Value>, TypedRowType where Cell: BaseCell {
-
+    
     /// Responsible for creating the cell for this row.
     public var cellProvider = CellProvider<Cell>()
-
+    
     /// The type of the cell associated to this row.
     public let cellType: Cell.Type! = Cell.self
-
+    
     private var _cell: Cell! {
         didSet {
             RowDefaults.cellSetup["\(type(of: self))"]?(_cell, self)
             (callbackCellSetup as? ((Cell) -> Void))?(_cell)
         }
     }
-
+    
     /// The cell associated to this row.
     public var cell: Cell! {
         return _cell ?? {
@@ -145,16 +145,16 @@ open class Row<Cell: CellType>: RowOf<Cell.Value>, TypedRowType where Cell: Base
             result.setup()
             _cell = result
             return _cell
-        }()
+            }()
     }
-
+    
     /// The untyped cell associated to this row
     public override var baseCell: BaseCell { return cell }
-
+    
     public required init(tag: String?) {
         super.init(tag: tag)
     }
-
+    
     /**
      Method that reloads the cell
      */
@@ -165,7 +165,7 @@ open class Row<Cell: CellType>: RowOf<Cell.Value>, TypedRowType where Cell: Base
         RowDefaults.cellUpdate["\(type(of: self))"]?(cell, self)
         callbackCellUpdate?()
     }
-
+    
     /**
      Method called when the cell belonging to this row was selected. Must call the corresponding method in its cell.
      */
@@ -177,15 +177,16 @@ open class Row<Cell: CellType>: RowOf<Cell.Value>, TypedRowType where Cell: Base
         customDidSelect()
         callbackCellOnSelection?()
     }
-
+    
     /**
      Will be called inside `didSelect` method of the row. Can be used to customize row selection from the definition of the row.
      */
     open func customDidSelect() {}
-
+    
     /**
      Will be called inside `updateCell` method of the row. Can be used to customize reloading a row from its definition.
      */
     open func customUpdateCell() {}
-
+    
 }
+
